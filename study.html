@@ -1,0 +1,277 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>독서 활동 기록장</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f3f6fa;
+      margin: 0;
+      padding: 40px 16px;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+      background-color: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      text-align: center;
+      color: #263b53;
+      margin-bottom: 10px;
+    }
+
+    .description {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+    }
+
+    label {
+      display: block;
+      margin-top: 20px;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 15px;
+      font-family: inherit;
+    }
+
+    textarea {
+      height: 120px;
+      resize: vertical;
+    }
+
+    .error {
+      color: #d32f2f;
+      font-size: 13px;
+      margin-top: 6px;
+      min-height: 16px;
+    }
+
+    .char-count {
+      text-align: right;
+      color: #666;
+      font-size: 13px;
+      margin-top: 6px;
+    }
+
+    .invalid {
+      border-color: #d32f2f;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 25px;
+      padding: 14px;
+      border: none;
+      border-radius: 6px;
+      background-color: #3568a8;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #254e80;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <h1>📚 독서 활동 기록장</h1>
+
+    <p class="description">
+      오늘의 독서 활동을 기록해 보세요.
+    </p>
+
+    <form
+      id="readingForm"
+      method="POST"
+      action="https://script.google.com/macros/s/AKfycbxB5YPVaiFIEqAwDXvQfjE6xXASiIfnMMAtXb8Iiilu_Drm0Ynm0eyRbB_wQzYrssda9A/exec"
+      novalidate
+    >
+
+      <!-- 책 제목 -->
+      <label for="bookTitle">책 제목</label>
+
+      <input
+        type="text"
+        id="bookTitle"
+        name="bookTitle"
+        placeholder="읽은 책의 제목을 입력하세요"
+      >
+
+      <div class="error" id="bookError"></div>
+
+      <!-- 독서 시간 -->
+      <label for="readingMinutes">
+        독서 시간(분)
+      </label>
+
+      <input
+        type="number"
+        id="readingMinutes"
+        name="readingMinutes"
+        min="1"
+        max="180"
+        step="1"
+        placeholder="1~180 사이의 정수를 입력하세요"
+      >
+
+      <div class="error" id="timeError"></div>
+
+      <!-- 한 줄 감상 -->
+      <label for="review">한 줄 감상</label>
+
+      <textarea
+        id="review"
+        name="review"
+        placeholder="10~100자로 감상을 작성하세요"
+      ></textarea>
+
+      <div class="char-count" id="charCount">
+        0 / 100
+      </div>
+
+      <div class="error" id="reviewError"></div>
+
+      <button type="submit">
+        기록 저장
+      </button>
+
+    </form>
+  </div>
+
+  <script>
+    // 입력 요소 가져오기
+    const form = document.getElementById("readingForm");
+    const bookTitle = document.getElementById("bookTitle");
+    const readingMinutes = document.getElementById("readingMinutes");
+    const review = document.getElementById("review");
+
+    // 오류 안내 요소
+    const bookError = document.getElementById("bookError");
+    const timeError = document.getElementById("timeError");
+    const reviewError = document.getElementById("reviewError");
+
+    // 글자 수 표시 요소
+    const charCount = document.getElementById("charCount");
+
+    // 감상 글자 수 실시간 갱신
+    review.addEventListener("input", function() {
+      const count = Array.from(review.value).length;
+
+      charCount.textContent = count + " / 100";
+
+      if (count > 100) {
+        charCount.style.color = "#d32f2f";
+      } else {
+        charCount.style.color = "#666";
+      }
+    });
+
+    // 제출 시 입력값 검사
+    form.addEventListener("submit", function(event) {
+
+      let isValid = true;
+
+      // 이전 오류 메시지 초기화
+      bookError.textContent = "";
+      timeError.textContent = "";
+      reviewError.textContent = "";
+
+      bookTitle.classList.remove("invalid");
+      readingMinutes.classList.remove("invalid");
+      review.classList.remove("invalid");
+
+      // 1. 책 제목 공란 및 공백 검사
+      if (bookTitle.value.trim() === "") {
+        bookError.textContent =
+          "책 제목을 입력해 주세요.";
+
+        bookTitle.classList.add("invalid");
+        isValid = false;
+      }
+
+      // 2. 독서 시간 검사
+      const timeText = readingMinutes.value.trim();
+      const time = Number(timeText);
+
+      if (timeText === "") {
+        timeError.textContent =
+          "독서 시간을 입력해 주세요.";
+
+        readingMinutes.classList.add("invalid");
+        isValid = false;
+
+      } else if (
+        !Number.isInteger(time) ||
+        time < 1 ||
+        time > 180
+      ) {
+        timeError.textContent =
+          "독서 시간은 1~180 사이의 정수만 입력할 수 있습니다.";
+
+        readingMinutes.classList.add("invalid");
+        isValid = false;
+      }
+
+      // 3. 감상 공란 및 글자 수 검사
+      const reviewText = review.value.trim();
+      const reviewLength = Array.from(reviewText).length;
+
+      if (reviewText === "") {
+        reviewError.textContent =
+          "한 줄 감상을 입력해 주세요.";
+
+        review.classList.add("invalid");
+        isValid = false;
+
+      } else if (reviewLength < 10) {
+        reviewError.textContent =
+          "한 줄 감상은 최소 10자 이상 작성해야 합니다.";
+
+        review.classList.add("invalid");
+        isValid = false;
+
+      } else if (reviewLength > 100) {
+        reviewError.textContent =
+          "한 줄 감상은 최대 100자까지 작성할 수 있습니다.";
+
+        review.classList.add("invalid");
+        isValid = false;
+      }
+
+      // 입력 조건을 만족하지 않으면 제출 차단
+      if (!isValid) {
+        event.preventDefault();
+      }
+
+      // 모든 조건을 만족하면 HTML form POST 제출
+    });
+  </script>
+
+</body>
+</html>
